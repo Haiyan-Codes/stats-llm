@@ -250,6 +250,27 @@ textarea{resize:vertical;min-height:100px;font-family:'Source Code Pro',monospac
 .viz-controls input[type=range]{width:120px}
 .viz-controls .val{color:var(--accent2);font-weight:600;min-width:40px}
 
+/* ===== 资源页面 ===== */
+.res-list{display:flex;flex-direction:column;gap:12px}
+.res-item{
+  display:block;padding:16px;border:1px solid var(--line);border-radius:var(--radius-sm);
+  background:var(--bg-elev);transition:all .2s;text-decoration:none;color:inherit;
+}
+.res-item:hover{border-color:var(--accent);background:var(--bg-card2);transform:translateX(4px)}
+.res-item h4{font-size:15px;margin-bottom:6px;color:var(--ink)}
+.res-item .meta{font-size:12px;color:var(--muted);margin-bottom:8px;display:flex;gap:12px;flex-wrap:wrap}
+.res-item .meta .tag{padding:2px 8px;border-radius:4px;background:rgba(99,102,241,.15);color:var(--accent2)}
+.res-item p{font-size:13px;color:var(--ink2);line-height:1.6}
+.res-item .link{font-size:12px;color:var(--accent);margin-top:8px;word-break:break-all}
+.term-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
+.term-card{padding:14px;border:1px solid var(--line);border-radius:var(--radius-sm);background:var(--bg-elev)}
+.term-card .zh{font-size:15px;font-weight:600;color:var(--ink)}
+.term-card .en{font-size:12px;color:var(--accent2);margin:4px 0}
+.term-card .def{font-size:12px;color:var(--ink2);line-height:1.5}
+.kb-stat-row{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--line);font-size:14px}
+.kb-stat-row:last-child{border-bottom:none}
+.kb-stat-row .v{color:var(--accent2);font-weight:600}
+
 /* ===== 配置面板 ===== */
 .config-bar{
   display:flex;gap:12px;align-items:center;flex-wrap:wrap;
@@ -286,6 +307,7 @@ textarea{resize:vertical;min-height:100px;font-family:'Source Code Pro',monospac
       <button data-page="qa"><span class="nav-ico">💬</span>知识问答</button>
       <button data-page="agent"><span class="nav-ico">📊</span>数据分析Agent</button>
       <button data-page="viz"><span class="nav-ico">🎯</span>多模态教学</button>
+      <button data-page="resources"><span class="nav-ico">📚</span>学习资源</button>
       <button data-page="about"><span class="nav-ico">ℹ️</span>关于</button>
     </div>
   </div>
@@ -303,9 +325,9 @@ textarea{resize:vertical;min-height:100px;font-family:'Source Code Pro',monospac
     <p>面向统计学类专业的AI教学平台，融合统计学科知识问答、智能数据分析Agent与多模态教学可视化，打造"AI+统计学"教学新模式</p>
     <div class="hero-stats">
       <div class="hero-stat"><div class="num">6</div><div class="label">核心课程覆盖</div></div>
-      <div class="hero-stat"><div class="num">3</div><div class="label">核心能力模块</div></div>
-      <div class="hero-stat"><div class="num">90%+</div><div class="label">问答准确率目标</div></div>
-      <div class="hero-stat"><div class="num">500+</div><div class="label">并发支持</div></div>
+      <div class="hero-stat"><div class="num">79+</div><div class="label">知识库条目</div></div>
+      <div class="hero-stat"><div class="num">4</div><div class="label">核心能力模块</div></div>
+      <div class="hero-stat"><div class="num">60+</div><div class="label">公开学术资源</div></div>
     </div>
   </div>
 
@@ -335,7 +357,7 @@ textarea{resize:vertical;min-height:100px;font-family:'Source Code Pro',monospac
 <section id="p-qa" class="page">
   <div class="config-bar">
     <label>Worker地址:</label>
-    <input id="qa-worker-url" type="url" placeholder="https://your-worker.workers.dev" value="">
+    <input id="qa-worker-url" type="url" placeholder="https://your-worker.workers.dev" value="https://stats-llm-api.mental-health-research-agent.workers.dev">
     <label>课程:</label>
     <select id="qa-course" style="width:auto">
       <option value="all">全部课程</option>
@@ -374,7 +396,7 @@ textarea{resize:vertical;min-height:100px;font-family:'Source Code Pro',monospac
 
   <div class="config-bar">
     <label>Worker地址:</label>
-    <input id="agent-worker-url" type="url" placeholder="https://your-worker.workers.dev" value="">
+    <input id="agent-worker-url" type="url" placeholder="https://your-worker.workers.dev" value="https://stats-llm-api.mental-health-research-agent.workers.dev">
     <button class="btn btn-sm" onclick="saveAgentConfig()">保存</button>
   </div>
 
@@ -385,6 +407,10 @@ textarea{resize:vertical;min-height:100px;font-family:'Source Code Pro',monospac
         <h3>点击或拖拽上传数据文件</h3>
         <p style="color:var(--muted);margin-top:8px">支持 CSV、Excel 格式，建议文件小于 10MB</p>
         <input type="file" id="file-input" accept=".csv,.xlsx,.xls" style="display:none" onchange="handleFile(event)">
+      </div>
+      <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-secondary btn-sm" onclick="loadSampleData()">📊 加载示例数据</button>
+        <button class="btn btn-ghost btn-sm" onclick="document.getElementById('task-desc').value='对数据进行描述性统计分析，检查各变量的分布、缺失情况和异常值'">📝 填充示例任务</button>
       </div>
 
       <div id="data-info" style="display:none;margin-top:16px">
@@ -539,6 +565,119 @@ textarea{resize:vertical;min-height:100px;font-family:'Source Code Pro',monospac
         <button class="btn btn-sm" onclick="runT()">绘制</button>
       </div>
     </div>
+
+    <!-- 蒙特卡洛估计π -->
+    <div class="viz-card">
+      <div class="viz-card-header">
+        <h3>🎲 蒙特卡洛估计π</h3>
+        <p>用随机投点法估计圆周率</p>
+      </div>
+      <div class="viz-canvas">
+        <canvas id="mc-canvas" width="320" height="240"></canvas>
+      </div>
+      <div class="viz-controls">
+        <label>投点数: <span class="val" id="mc-n-val">1000</span></label>
+        <input type="range" id="mc-n" min="100" max="10000" value="1000" step="100" oninput="updateMC()">
+        <button class="btn btn-sm" onclick="runMC()">模拟</button>
+        <span style="color:var(--accent2);font-weight:600">π≈<span id="mc-pi">3.14</span></span>
+      </div>
+    </div>
+
+    <!-- 大数定律 -->
+    <div class="viz-card">
+      <div class="viz-card-header">
+        <h3>📊 大数定律</h3>
+        <p>样本均值随n增大趋近期望</p>
+      </div>
+      <div class="viz-canvas">
+        <canvas id="lln-canvas" width="320" height="240"></canvas>
+      </div>
+      <div class="viz-controls">
+        <label>期望μ: <span class="val" id="lln-mu-val">0.5</span></label>
+        <input type="range" id="lln-mu" min="1" max="9" value="5" oninput="updateLLN()">
+        <button class="btn btn-sm" onclick="runLLN()">模拟</button>
+      </div>
+    </div>
+
+    <!-- 二项分布 -->
+    <div class="viz-card">
+      <div class="viz-card-header">
+        <h3>🎲 二项分布</h3>
+        <p>调整n和p观察分布形态</p>
+      </div>
+      <div class="viz-canvas">
+        <canvas id="binom-canvas" width="320" height="240"></canvas>
+      </div>
+      <div class="viz-controls">
+        <label>n: <span class="val" id="binom-n-val">20</span></label>
+        <input type="range" id="binom-n" min="1" max="50" value="20" oninput="updateBinom()">
+        <label>p: <span class="val" id="binom-p-val">0.5</span></label>
+        <input type="range" id="binom-p" min="1" max="99" value="50" oninput="updateBinom()">
+        <button class="btn btn-sm" onclick="runBinom()">绘制</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 推荐问题 -->
+  <div class="panel" style="margin-top:24px">
+    <div class="panel-header"><h2>💡 推荐探索问题</h2></div>
+    <div class="panel-body">
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px">
+        <button class="btn btn-secondary btn-sm" onclick="askSuggested('什么是中心极限定理？它在统计推断中有什么作用？')">什么是中心极限定理？</button>
+        <button class="btn btn-secondary btn-sm" onclick="askSuggested('解释最大似然估计的原理和性质')">最大似然估计原理</button>
+        <button class="btn btn-secondary btn-sm" onclick="askSuggested('置信区间和可信区间有什么区别？')">置信区间vs可信区间</button>
+        <button class="btn btn-secondary btn-sm" onclick="askSuggested('如何诊断和处理多重共线性？')">多重共线性诊断</button>
+        <button class="btn btn-secondary btn-sm" onclick="askSuggested('ARIMA模型的建模流程是什么？')">ARIMA建模流程</button>
+        <button class="btn btn-secondary btn-sm" onclick="askSuggested('分层抽样中如何进行样本量分配？')">分层抽样样本量</button>
+        <button class="btn btn-secondary btn-sm" onclick="askSuggested('PCA和因子分析有什么区别？')">PCA vs 因子分析</button>
+        <button class="btn btn-secondary btn-sm" onclick="askSuggested('Bootstrap自助法的原理和应用')">Bootstrap原理</button>
+        <button class="btn btn-secondary btn-sm" onclick="askSuggested('假设检验中两类错误的关系')">假设检验两类错误</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 学习资源 ===== -->
+<section id="p-resources" class="page">
+  <h1 class="page-title">学习资源</h1>
+  <p class="page-desc">平台整合了公开统计学教材、顶刊论文与专业术语库，支撑知识问答与教学应用</p>
+
+  <div class="card-grid" id="res-stats" style="grid-template-columns:repeat(auto-fit,minmax(200px,1fr))"></div>
+
+  <div class="panel" style="margin-top:24px">
+    <div class="panel-header">
+      <h2>📖 推荐教材</h2>
+      <input id="res-search" type="text" placeholder="搜索教材..." style="width:auto;max-width:240px" oninput="renderTextbooks()">
+    </div>
+    <div class="panel-body">
+      <div id="textbook-list" class="res-list"></div>
+    </div>
+  </div>
+
+  <div class="panel" style="margin-top:24px">
+    <div class="panel-header">
+      <h2>📄 顶刊论文（Crossref）</h2>
+      <select id="journal-filter" style="width:auto" onchange="renderArticles()">
+        <option value="all">全部期刊</option>
+      </select>
+    </div>
+    <div class="panel-body">
+      <div id="article-list" class="res-list"></div>
+    </div>
+  </div>
+
+  <div class="panel" style="margin-top:24px">
+    <div class="panel-header"><h2>🔤 专业术语库</h2></div>
+    <div class="panel-body">
+      <div id="term-list" class="term-grid"></div>
+    </div>
+  </div>
+
+  <div class="panel" style="margin-top:24px">
+    <div class="panel-header"><h2>🗂 知识库统计</h2></div>
+    <div class="panel-body">
+      <div id="kb-stats"></div>
+    </div>
   </div>
 </section>
 
@@ -607,6 +746,7 @@ textarea{resize:vertical;min-height:100px;font-family:'Source Code Pro',monospac
 </main>
 
 <script src="stats_knowledge.js"></script>
+<script src="public_resources.js"></script>
 <script>
 // ==========================================
 // 统计学学科大模型 - 前端逻辑
@@ -621,6 +761,7 @@ function go(pageId){
   });
   window.scrollTo(0,0);
   if(pageId==='viz') setTimeout(initViz,100);
+  if(pageId==='resources'){ renderResStats(); renderTextbooks(); renderArticles(); renderTerms(); renderKbStats(); }
 }
 document.querySelectorAll('.nav-tabs button').forEach(b=>{
   b.onclick=()=>go(b.dataset.page);
@@ -659,8 +800,49 @@ function initCourses(){
   });
 }
 
-// RAG 检索 - 支持中文
-const STOP_WORDS = ['什么是','什么','是','的','了','吗','呢','啊','和','与','或','在','有','为','如何','怎么','怎样','怎样的','请','解释','说明','介绍','定义','概念','意思','含义','？','?','。','，','、','！','!','一','一个','这个','那个','怎么理解','如何理解'];
+// RAG 检索 - 支持中文 + 同义词扩展 + TF-IDF评分
+const STOP_WORDS = ['什么是','什么','是','的','了','吗','呢','啊','和','与','或','在','有','为','如何','怎么','怎样','怎样的','请','解释','说明','介绍','定义','概念','意思','含义','？','?','。','，','、','！','!','一','一个','这个','那个','怎么理解','如何理解','区别','比较','以及','关于','之间'];
+
+// 同义词词典 - 扩展检索覆盖
+const SYNONYMS = {
+  '中心极限定理': ['CLT','central limit','大样本','正态近似'],
+  '最大似然': ['MLE','极大似然','似然函数'],
+  '假设检验': ['hypothesis testing','显著性检验','p值','p-value'],
+  '置信区间': ['confidence interval','区间估计','CI'],
+  '贝叶斯': ['bayesian','后验','先验','MCMC'],
+  '回归': ['regression','最小二乘','OLS','线性模型'],
+  '方差分析': ['ANOVA','F检验','组间差异'],
+  '主成分': ['PCA','降维','principal component'],
+  '聚类': ['cluster','K-means','分类','无监督'],
+  '时间序列': ['time series','ARIMA','平稳','自相关'],
+  '抽样': ['sampling','调查','样本','估计'],
+  '试验设计': ['DOE','experimental design','析因','正交'],
+  'Bootstrap': ['自助法','重抽样','resampling'],
+  '蒙特卡洛': ['monte carlo','模拟','simulation'],
+  '协方差': ['covariance','相关','correlation'],
+  '正态分布': ['高斯','gaussian','normal distribution'],
+  'Logistic': ['逻辑回归','logit','二分类'],
+  '岭回归': ['ridge','正则化','L2'],
+  'Lasso': ['正则化','L1','变量选择'],
+  '广义线性': ['GLM','连接函数','指数族'],
+  '混合效应': ['multilevel','层次模型','随机效应','LMM'],
+  '单位根': ['ADF','平稳性','stationary'],
+  '协整': ['cointegration','长期均衡','ECM'],
+  '分层抽样': ['stratified','分层','比例分配'],
+  'GARCH': ['波动率','volatility','ARCH'],
+};
+
+function expandSynonyms(words){
+  const expanded = new Set(words);
+  words.forEach(w=>{
+    for(const [key, syns] of Object.entries(SYNONYMS)){
+      if(w.includes(key) || key.includes(w)){
+        syns.forEach(s=>expanded.add(s.toLowerCase()));
+      }
+    }
+  });
+  return [...expanded];
+}
 
 function extractKeywords(text){
   // 移除标点和停用词
@@ -683,30 +865,62 @@ function extractKeywords(text){
   return [...new Set(tokens)];
 }
 
-function searchKnowledge(query, topK=4){
-  const qWords = extractKeywords(query);
+// 预计算文档频率（DF）用于TF-IDF
+let _dfCache = null;
+function getDF(){
+  if(_dfCache) return _dfCache;
+  const df = {};
+  STATS_KB.forEach(k=>{
+    const text = (k.title + ' ' + k.content + ' ' + (k.tags||[]).join(' ')).toLowerCase();
+    const seen = new Set();
+    // 简单2-gram
+    for(let i=0;i<text.length-1;i++){
+      const g = text.substr(i,2);
+      if(!seen.has(g)){ df[g] = (df[g]||0)+1; seen.add(g); }
+    }
+  });
+  _dfCache = df;
+  return df;
+}
+
+function searchKnowledge(query, topK=5){
+  let qWords = extractKeywords(query);
+  qWords = expandSynonyms(qWords);
   let pool = STATS_KB;
   if(currentCourse !== 'all'){
     pool = pool.filter(k=>k.topic===currentCourse);
   }
+  const N = STATS_KB.length;
+  const df = getDF();
   const scored = pool.map(k=>{
     const text = (k.title + ' ' + k.content + ' ' + (k.tags||[]).join(' ')).toLowerCase();
     let score = 0;
+    const matchedTerms = new Set();
     qWords.forEach(w=>{
       if(w.length<2) return;
       let idx = text.indexOf(w);
+      let tf = 0;
       while(idx !== -1){
+        tf++;
         score += w.length>=3 ? 2 : 1;
         if(k.title.toLowerCase().includes(w)) score += 3;
         if((k.tags||[]).some(t=>t.toLowerCase().includes(w))) score += 4;
         idx = text.indexOf(w, idx+1);
+      }
+      // TF-IDF加权
+      if(tf > 0 && df[w]){
+        const idf = Math.log(N / df[w]);
+        score += tf * idf * 0.5;
+        matchedTerms.add(w);
       }
     });
     // 标题精确匹配加分
     qWords.forEach(w=>{
       if(w.length>=3 && k.title.toLowerCase().includes(w)) score += 5;
     });
-    return {...k, score};
+    // 课程匹配加分
+    if(k.topic && query.includes(k.topic.slice(0,2))) score += 2;
+    return {...k, score, matched: matchedTerms.size};
   }).filter(k=>k.score>0).sort((a,b)=>b.score-a.score);
   return scored.slice(0, topK);
 }
@@ -766,13 +980,29 @@ async function sendQuestion(){
 
 function generateLocalAnswer(q, context){
   if(context.length===0){
-    return `关于"${q}"，我在当前知识库中未找到完全匹配的内容。\n\n建议：\n1. 请尝试更具体的统计学问题（如"什么是中心极限定理"）\n2. 或选择左侧课程分类缩小范围\n3. 配置 Worker 后端以获取更全面的回答`;
+    // 尝试从公开资源中查找
+    let resHint = '';
+    if(typeof PUBLIC_RESOURCES !== 'undefined'){
+      const terms = (PUBLIC_RESOURCES.terminology||[]).filter(t=>{
+        const ql = q.toLowerCase();
+        return t.en && t.zh && (ql.includes(t.en.toLowerCase()) || q.includes(t.zh));
+      });
+      if(terms.length>0){
+        resHint = '\n\n**相关术语：**\n' + terms.slice(0,3).map(t=>'• '+t.zh+' ('+t.en+'): '+t.def).join('\n');
+      }
+    }
+    return `关于"${q}"，我在当前知识库中未找到完全匹配的内容。${resHint}\n\n建议：\n1. 尝试更具体的关键词（如"中心极限定理"、"ARIMA建模流程"）\n2. 选择左侧课程分类缩小范围\n3. 配置 Worker 后端以获取大模型完整解答\n4. 查看"学习资源"页面获取相关教材`;
   }
-  let ans = `基于知识库检索到 ${context.length} 条相关资料：\n\n`;
+  let ans = `📚 基于知识库检索到 **${context.length}** 条相关资料，为您解答：\n\n`;
   context.forEach((c,i)=>{
-    ans += `**${c.title}**\n${c.content}\n\n`;
+    ans += `### ${i+1}. ${c.title}\n`;
+    ans += `*课程：${c.topic} | 来源：${c.source}*\n\n`;
+    ans += `${c.content}\n\n`;
+    if(c.tags && c.tags.length>0){
+      ans += `**关键词：** ${c.tags.join('、')}\n\n`;
+    }
   });
-  ans += `---\n*以上内容来源于统计学知识库。如需更详细的解答，请配置 Worker 后端连接大模型 API。*`;
+  ans += `---\n*以上内容来源于统计学知识库（共${STATS_KB.length}条）。如需更深入的推导或代码示例，请配置 Worker 后端连接大模型 API。*`;
   return ans;
 }
 
@@ -842,6 +1072,33 @@ function handleFile(e){
     parseCSV(text, file.name);
   };
   reader.readAsText(file);
+}
+
+// 加载示例数据
+function loadSampleData(){
+  const csv = `id,age,income,education,gender,satisfaction
+1,25,45000,12,1,3.5
+2,30,52000,16,0,4.2
+3,35,61000,18,1,4.5
+4,28,48000,14,0,3.8
+5,42,75000,20,1,4.8
+6,23,38000,10,0,3.2
+7,31,55000,16,1,4.0
+8,38,68000,18,0,4.3
+9,27,46000,13,1,3.6
+10,45,82000,20,0,4.9
+11,29,50000,15,1,3.9
+12,33,58000,17,0,4.1
+13,26,42000,12,1,3.4
+14,40,72000,19,0,4.7
+15,24,40000,11,1,3.3
+16,36,63000,17,0,4.4
+17,32,56000,16,1,4.0
+18,39,70000,19,0,4.6
+19,27,47000,13,1,3.7
+20,41,78000,20,0,4.8`;
+  parseCSV(csv, 'sample_survey_data.csv');
+  document.getElementById('task-desc').value = '分析收入(income)的影响因素，建立回归模型，并解释各变量的统计意义';
 }
 
 // 拖拽上传
@@ -996,6 +1253,121 @@ function copyResult(){
 // ===== 多模态可视化 =====
 function initViz(){
   runCLT(); runHT(); runNorm(); runCI(); runCorr(); runT();
+  runMC(); runLLN(); runBinom();
+}
+
+// 推荐问题
+function askSuggested(q){
+  go('qa');
+  document.getElementById('qa-input').value = q;
+  sendQuestion();
+}
+
+// 蒙特卡洛估计π
+function runMC(){
+  const n = parseInt(document.getElementById('mc-n').value);
+  document.getElementById('mc-n-val').textContent = n;
+  const ctx = clearCanvas('mc-canvas');
+  const w=320, h=240, cx=w/2, cy=h/2, r=Math.min(w,h)/2-20;
+  // 画圆和方框
+  ctx.strokeStyle='#06b6d4'; ctx.lineWidth=2;
+  ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2); ctx.stroke();
+  ctx.strokeStyle='#7a7a90';
+  ctx.strokeRect(cx-r,cy-r,r*2,r*2);
+  let inside=0;
+  for(let i=0;i<n;i++){
+    const x=cx-r+Math.random()*r*2;
+    const y=cy-r+Math.random()*r*2;
+    const isIn=(x-cx)*(x-cx)+(y-cy)*(y-cy)<=r*r;
+    if(isIn) inside++;
+    ctx.fillStyle=isIn?'rgba(99,102,241,.4)':'rgba(239,68,68,.3)';
+    ctx.fillRect(x,y,1.5,1.5);
+  }
+  const piEst=4*inside/n;
+  document.getElementById('mc-pi').textContent=piEst.toFixed(4);
+  ctx.fillStyle='#f0f0f5'; ctx.font='12px Inter';
+  ctx.fillText('π≈'+piEst.toFixed(4)+' (n='+n+')', 10, 18);
+  ctx.fillStyle='#10b981';
+  ctx.fillText('内:'+inside+' 外:'+(n-inside), 10, h-8);
+}
+function updateMC(){document.getElementById('mc-n-val').textContent=document.getElementById('mc-n').value}
+
+// 大数定律
+function runLLN(){
+  const mu = parseInt(document.getElementById('lln-mu').value)/10;
+  document.getElementById('lln-mu-val').textContent = mu.toFixed(1);
+  const ctx = clearCanvas('lln-canvas');
+  const w=320, h=240, pad=30;
+  ctx.fillStyle='#0a0a0f'; ctx.fillRect(0,0,w,h);
+  ctx.fillStyle='#f0f0f5'; ctx.font='12px Inter';
+  ctx.fillText('大数定律: 样本均值→μ='+mu.toFixed(1), 10, 18);
+  // 坐标轴
+  const N=500;
+  ctx.strokeStyle='#333'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(pad,pad); ctx.lineTo(pad,h-pad); ctx.lineTo(w-pad,h-pad); ctx.stroke();
+  // μ线
+  const yMu = h-pad - (mu/1)*(h-pad*2);
+  ctx.strokeStyle='#10b981'; ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.moveTo(pad,yMu); ctx.lineTo(w-pad,yMu); ctx.stroke();
+  ctx.fillStyle='#10b981'; ctx.fillText('μ', pad-15, yMu+4);
+  // 累积均值
+  let sum=0;
+  ctx.strokeStyle='#6366f1'; ctx.lineWidth=1.5;
+  ctx.beginPath();
+  for(let i=1;i<=N;i++){
+    sum += Math.random();
+    const mean = sum/i;
+    const x = pad + (i/N)*(w-pad*2);
+    const y = h-pad - mean*(h-pad*2);
+    if(i===1) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+  }
+  ctx.stroke();
+  ctx.fillStyle='#f0f0f5';
+  ctx.fillText('n=1..'+N, w-pad-50, h-8);
+}
+function updateLLN(){document.getElementById('lln-mu-val').textContent=(parseInt(document.getElementById('lln-mu').value)/10).toFixed(1)}
+
+// 二项分布
+function runBinom(){
+  const n = parseInt(document.getElementById('binom-n').value);
+  const p = parseInt(document.getElementById('binom-p').value)/100;
+  document.getElementById('binom-n-val').textContent = n;
+  document.getElementById('binom-p-val').textContent = p.toFixed(2);
+  const ctx = clearCanvas('binom-canvas');
+  const w=320, h=240, pad=30;
+  ctx.fillStyle='#0a0a0f'; ctx.fillRect(0,0,w,h);
+  ctx.fillStyle='#f0f0f5'; ctx.font='12px Inter';
+  ctx.fillText('B('+n+','+p.toFixed(2)+') μ='+(n*p).toFixed(1)+' σ²='+(n*p*(1-p)).toFixed(1), 10, 18);
+  // 计算PMF
+  const probs=[];
+  let maxP=0;
+  for(let k=0;k<=n;k++){
+    const pr = choose(n,k)*Math.pow(p,k)*Math.pow(1-p,n-k);
+    probs.push(pr);
+    if(pr>maxP) maxP=pr;
+  }
+  // 画柱
+  const bw=(w-pad*2)/(n+1);
+  probs.forEach((pr,k)=>{
+    const bh=(pr/maxP)*(h-pad*2-20);
+    const x=pad+k*bw;
+    const y=h-pad-bh;
+    ctx.fillStyle=k<=n*p?'#6366f1':'#a855f7';
+    ctx.fillRect(x+1,y,bw-2,bh);
+  });
+  // 坐标轴
+  ctx.strokeStyle='#333'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(pad,pad); ctx.lineTo(pad,h-pad); ctx.lineTo(w-pad,h-pad); ctx.stroke();
+}
+function updateBinom(){
+  document.getElementById('binom-n-val').textContent=document.getElementById('binom-n').value;
+  document.getElementById('binom-p-val').textContent=(parseInt(document.getElementById('binom-p').value)/100).toFixed(2);
+}
+function choose(n,k){
+  if(k<0||k>n) return 0;
+  let r=1;
+  for(let i=1;i<=k;i++) r=r*(n-i+1)/i;
+  return r;
 }
 
 // 工具函数
@@ -1274,8 +1646,108 @@ function lgamma(x){
   return -tmp+Math.log(2.5066282746310005*ser/x);
 }
 
+// ===== 学习资源页面 =====
+function renderResStats(){
+  if(typeof PUBLIC_RESOURCES === 'undefined') return;
+  const arxivN = (PUBLIC_RESOURCES.arxiv_papers||[]).length;
+  const journalN = (PUBLIC_RESOURCES.journal_articles||[]).length;
+  const textbookN = (PUBLIC_RESOURCES.open_textbooks||[]).length;
+  const termN = (PUBLIC_RESOURCES.terminology||[]).length;
+  const kbN = STATS_KB.length;
+  const stats = [
+    {icon:'📖', num:textbookN, label:'推荐教材'},
+    {icon:'📄', num:journalN, label:'顶刊论文'},
+    {icon:'📑', num:arxivN, label:'arXiv论文'},
+    {icon:'🔤', num:termN, label:'专业术语'},
+    {icon:'🗂', num:kbN, label:'知识库条目'},
+    {icon:'📚', num:6, label:'核心课程'},
+  ];
+  document.getElementById('res-stats').innerHTML = stats.map(s=>
+    `<div class="feature-card" style="text-align:center;cursor:default">
+      <div class="feature-icon" style="margin:0 auto 12px">${s.icon}</div>
+      <div style="font-size:28px;font-weight:700;background:var(--grad-text);-webkit-background-clip:text;background-clip:text;color:transparent">${s.num}</div>
+      <div style="font-size:13px;color:var(--muted);margin-top:4px">${s.label}</div>
+    </div>`
+  ).join('');
+}
+
+function renderTextbooks(){
+  if(typeof PUBLIC_RESOURCES === 'undefined') return;
+  const q = (document.getElementById('res-search').value||'').toLowerCase();
+  const books = (PUBLIC_RESOURCES.open_textbooks||[]).filter(b=>{
+    if(!q) return true;
+    return (b.title+b.authors.join('')+b.category+b.abstract).toLowerCase().includes(q);
+  });
+  document.getElementById('textbook-list').innerHTML = books.map(b=>
+    `<a class="res-item" href="${b.url}" target="_blank" rel="noopener">
+      <h4>${b.title}</h4>
+      <div class="meta">
+        <span class="tag">${b.category}</span>
+        <span>${(b.authors||[]).join(', ')}</span>
+        <span>${b.published}</span>
+        <span>${b.source}</span>
+      </div>
+      <p>${b.abstract}</p>
+      <div class="link">${b.url}</div>
+    </a>`
+  ).join('') || '<p style="color:var(--muted);text-align:center;padding:20px">未找到匹配的教材</p>';
+}
+
+function renderArticles(){
+  if(typeof PUBLIC_RESOURCES === 'undefined') return;
+  const filter = document.getElementById('journal-filter').value || 'all';
+  // 填充下拉
+  const cats = [...new Set((PUBLIC_RESOURCES.journal_articles||[]).map(a=>a.category))];
+  const sel = document.getElementById('journal-filter');
+  if(sel.options.length <= 1){
+    cats.forEach(c=>{ const o=document.createElement('option'); o.value=c; o.textContent=c; sel.appendChild(o); });
+  }
+  const arts = (PUBLIC_RESOURCES.journal_articles||[]).filter(a=>filter==='all'||a.category===filter);
+  document.getElementById('article-list').innerHTML = arts.map(a=>
+    `<a class="res-item" href="${a.url}" target="_blank" rel="noopener">
+      <h4>${a.title}</h4>
+      <div class="meta">
+        <span class="tag">${a.category}</span>
+        <span>${(a.authors||[]).join(', ')}</span>
+        <span>${a.published}</span>
+      </div>
+      <p>${a.abstract}</p>
+      ${a.doi?`<div class="link">DOI: ${a.doi}</div>`:''}
+    </a>`
+  ).join('') || '<p style="color:var(--muted);text-align:center;padding:20px">暂无论文</p>';
+}
+
+function renderTerms(){
+  if(typeof PUBLIC_RESOURCES === 'undefined') return;
+  const terms = PUBLIC_RESOURCES.terminology||[];
+  document.getElementById('term-list').innerHTML = terms.map(t=>
+    `<div class="term-card">
+      <div class="zh">${t.zh}</div>
+      <div class="en">${t.en}</div>
+      <div class="def">${t.def}</div>
+    </div>`
+  ).join('');
+}
+
+function renderKbStats(){
+  // 按课程统计
+  const stats = {};
+  STATS_KB.forEach(k=>{ stats[k.topic] = (stats[k.topic]||0)+1; });
+  let html = '';
+  Object.entries(stats).forEach(([t,c])=>{
+    html += `<div class="kb-stat-row"><span>${t}</span><span class="v">${c} 条</span></div>`;
+  });
+  html += `<div class="kb-stat-row"><span>总计</span><span class="v">${STATS_KB.length} 条</span></div>`;
+  document.getElementById('kb-stats').innerHTML = html;
+}
+
 // ===== 初始化 =====
 initCourses();
+renderResStats();
+renderTextbooks();
+renderArticles();
+renderTerms();
+renderKbStats();
 // 加载保存的配置
 const qaCfg = getQaConfig();
 if(qaCfg.url) document.getElementById('qa-worker-url').value = qaCfg.url;
