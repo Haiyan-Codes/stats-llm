@@ -356,8 +356,10 @@ textarea{resize:vertical;min-height:100px;font-family:'Source Code Pro',monospac
 <!-- ===== 知识问答 ===== -->
 <section id="p-qa" class="page">
   <div class="config-bar">
+    <label title="填写后直接调用DeepSeek大模型，无需Worker">🔑 API Key:</label>
+    <input id="qa-api-key" type="password" placeholder="sk-... (DeepSeek API Key)" style="min-width:240px" autocomplete="off">
     <label>Worker地址:</label>
-    <input id="qa-worker-url" type="url" placeholder="https://your-worker.workers.dev" value="https://statllm.mentalhealthresearch.top">
+    <input id="qa-worker-url" type="url" placeholder="可选：Worker后端地址" value="">
     <label>课程:</label>
     <select id="qa-course" style="width:auto">
       <option value="all">全部课程</option>
@@ -395,8 +397,10 @@ textarea{resize:vertical;min-height:100px;font-family:'Source Code Pro',monospac
   <p class="page-desc">上传数据集（CSV/Excel），智能体将自动完成数据清洗、探索性分析、统计建模、结果解释与可视化</p>
 
   <div class="config-bar">
+    <label title="填写后直接调用DeepSeek大模型">🔑 API Key:</label>
+    <input id="agent-api-key" type="password" placeholder="sk-... (DeepSeek API Key)" style="min-width:240px" autocomplete="off">
     <label>Worker地址:</label>
-    <input id="agent-worker-url" type="url" placeholder="https://your-worker.workers.dev" value="https://statllm.mentalhealthresearch.top">
+    <input id="agent-worker-url" type="url" placeholder="可选：Worker后端地址" value="">
     <button class="btn btn-sm" onclick="saveAgentConfig()">保存</button>
   </div>
 
@@ -927,12 +931,43 @@ function searchKnowledge(query, topK=5){
 
 function getQaConfig(){
   const saved = localStorage.getItem('stats_qa_cfg');
-  return saved ? JSON.parse(saved) : {url:''};
+  return saved ? JSON.parse(saved) : {url:'', apiKey:''};
 }
 function saveQaConfig(){
   const url = document.getElementById('qa-worker-url').value.trim();
-  localStorage.setItem('stats_qa_cfg', JSON.stringify({url}));
+  const apiKey = document.getElementById('qa-api-key').value.trim();
+  localStorage.setItem('stats_qa_cfg', JSON.stringify({url, apiKey}));
   alert('配置已保存');
+}
+
+// 直接调用 DeepSeek API（前端直连，无需Worker）
+async function callDeepSeekDirect(apiKey, messages, contextSources){
+  const sysPrompt = `你是统计学学科大模型，由华东师范大学开发。请基于以下知识库内容回答用户的统计学问题，要求准确、专业、可溯源。
+回答风格：教学导向，适合统计学专业本科生/研究生。适当使用LaTeX数学公式（用$...$或$$...$$包裹）、表格和代码示例。
+引用知识库时用[1][2]标注来源。
+
+【知识库】
+${contextSources.map((c,i)=>`[${i+1}] ${c.title}（${c.topic}，来源：${c.source}）\n${c.content}`).join('\n\n')}`;
+
+  const resp = await fetch('https://api.deepseek.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ' + apiKey
+    },
+    body: JSON.stringify({
+      model: 'deepseek-chat',
+      messages: [{role:'system', content:sysPrompt}, ...messages],
+      temperature: 0.7,
+      max_tokens: 4000
+    })
+  });
+  if(!resp.ok){
+    const err = await resp.text();
+    throw new Error('DeepSeek API 错误 ' + resp.status + ': ' + err.slice(0,200));
+  }
+  const data = await resp.json();
+  return data.choices[0].message.content;
 }
 
 async function sendQuestion(){
@@ -954,11 +989,15 @@ async function sendQuestion(){
 
   try{
     const cfg = getQaConfig();
-    // 优先使用输入框中的地址，其次使用保存的配置
+    const apiKey = (document.getElementById('qa-api-key').value || cfg.apiKey || '').trim();
     const workerUrl = (document.getElementById('qa-worker-url').value || cfg.url || '').trim();
     let answer;
-    if(workerUrl){
-      // 调用 Worker 后端
+
+    if(apiKey){
+      // 优先：直连 DeepSeek API
+      answer = await callDeepSeekDirect(apiKey, chatHistory, contextSources);
+    } else if(workerUrl){
+      // 备选：调用 Worker 后端
       const resp = await fetch(workerUrl.replace(/\/+$/,'') + '/api/chat', {
         method:'POST',
         headers:{'Content-Type':'application/json'},
@@ -967,7 +1006,7 @@ async function sendQuestion(){
       const data = await resp.json();
       answer = data.content;
     } else {
-      // 无 Worker 时使用本地知识库生成回答
+      // 无 API Key 也无 Worker 时使用本地知识库生成回答
       answer = generateLocalAnswer(q, context);
     }
 
@@ -976,7 +1015,7 @@ async function sendQuestion(){
     chatHistory.push({role:'assistant', content:answer});
   } catch(e){
     removeTyping(typingId);
-    addMessage('ai', '⚠️ 出错了：' + e.message + '\n\n请检查 Worker 地址配置，或确保网络连接正常。');
+    addMessage('ai', '⚠️ 出错了：' + e.message + '\n\n请检查 API Key 是否正确，或确保网络连接正常。');
   }
 }
 
@@ -1057,12 +1096,50 @@ let currentData = null;
 
 function getAgentConfig(){
   const saved = localStorage.getItem('stats_agent_cfg');
-  return saved ? JSON.parse(saved) : {url:''};
+  return saved ? JSON.parse(saved) : {url:'', apiKey:''};
 }
 function saveAgentConfig(){
   const url = document.getElementById('agent-worker-url').value.trim();
-  localStorage.setItem('stats_agent_cfg', JSON.stringify({url}));
+  const apiKey = document.getElementById('agent-api-key').value.trim();
+  localStorage.setItem('stats_agent_cfg', JSON.stringify({url, apiKey}));
   alert('配置已保存');
+}
+
+// Agent 直连 DeepSeek
+async function callDeepSeekAgent(apiKey, task, dataPreview, columnInfo){
+  const sysPrompt = `你是数据分析教学智能体。学生上传了数据集，请根据任务要求完成分析，输出专业、详细的分析报告。
+要求：
+1. 先理解数据和任务
+2. 给出完整的分析思路和步骤
+3. 提供 Python/R 代码示例
+4. 解释统计结果的含义
+5. 适合统计学教学使用
+
+【任务】${task}
+【数据预览】
+${dataPreview}
+【列信息】
+${columnInfo}`;
+
+  const resp = await fetch('https://api.deepseek.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ' + apiKey
+    },
+    body: JSON.stringify({
+      model: 'deepseek-chat',
+      messages: [{role:'system', content:sysPrompt}, {role:'user', content:'请开始分析'}],
+      temperature: 0.7,
+      max_tokens: 4000
+    })
+  });
+  if(!resp.ok){
+    const err = await resp.text();
+    throw new Error('DeepSeek API 错误 ' + resp.status + ': ' + err.slice(0,200));
+  }
+  const data = await resp.json();
+  return data.choices[0].message.content;
 }
 
 function handleFile(e){
@@ -1160,9 +1237,15 @@ async function runAnalysis(){
 
   try{
     const cfg = getAgentConfig();
+    const apiKey = (document.getElementById('agent-api-key').value || cfg.apiKey || '').trim();
     const workerUrl = (document.getElementById('agent-worker-url').value || cfg.url || '').trim();
     let result;
-    if(workerUrl){
+
+    if(apiKey){
+      // 优先：直连 DeepSeek API
+      result = await callDeepSeekAgent(apiKey, task, dataPreview, columnInfo);
+    } else if(workerUrl){
+      // 备选：调用 Worker 后端
       const resp = await fetch(workerUrl.replace(/\/+$/,'') + '/api/analyze', {
         method:'POST',
         headers:{'Content-Type':'application/json'},
@@ -1171,6 +1254,7 @@ async function runAnalysis(){
       const data = await resp.json();
       result = data.content;
     } else {
+      // 无 API Key 也无 Worker 时使用本地分析
       result = generateLocalAnalysis(task, currentData, columnInfo);
     }
     resultDiv.innerHTML = formatMD(result);
@@ -1754,8 +1838,10 @@ renderKbStats();
 // 加载保存的配置
 const qaCfg = getQaConfig();
 if(qaCfg.url) document.getElementById('qa-worker-url').value = qaCfg.url;
+if(qaCfg.apiKey) document.getElementById('qa-api-key').value = qaCfg.apiKey;
 const agentCfg = getAgentConfig();
 if(agentCfg.url) document.getElementById('agent-worker-url').value = agentCfg.url;
+if(agentCfg.apiKey) document.getElementById('agent-api-key').value = agentCfg.apiKey;
 </script>
 </body>
 </html>
