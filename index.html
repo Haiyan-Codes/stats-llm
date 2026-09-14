@@ -954,10 +954,12 @@ async function sendQuestion(){
 
   try{
     const cfg = getQaConfig();
+    // 优先使用输入框中的地址，其次使用保存的配置
+    const workerUrl = (document.getElementById('qa-worker-url').value || cfg.url || '').trim();
     let answer;
-    if(cfg.url){
+    if(workerUrl){
       // 调用 Worker 后端
-      const resp = await fetch(cfg.url.replace(/\/+$/,'') + '/api/chat', {
+      const resp = await fetch(workerUrl.replace(/\/+$/,'') + '/api/chat', {
         method:'POST',
         headers:{'Content-Type':'application/json'},
         body: JSON.stringify({messages:chatHistory, context:contextSources})
@@ -1158,9 +1160,10 @@ async function runAnalysis(){
 
   try{
     const cfg = getAgentConfig();
+    const workerUrl = (document.getElementById('agent-worker-url').value || cfg.url || '').trim();
     let result;
-    if(cfg.url){
-      const resp = await fetch(cfg.url.replace(/\/+$/,'') + '/api/analyze', {
+    if(workerUrl){
+      const resp = await fetch(workerUrl.replace(/\/+$/,'') + '/api/analyze', {
         method:'POST',
         headers:{'Content-Type':'application/json'},
         body: JSON.stringify({task, dataPreview, columnInfo})
